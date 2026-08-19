@@ -58,6 +58,7 @@ function ensureQuestionLayout(){
     aLabel=document.createElement('div');
     aLabel.id='displayAnswerLabel';
     aLabel.className='display-section-label display-answer-label';
+    aLabel.textContent='解答選択肢';
     choices.parentNode.insertBefore(aLabel,choices);
   }
   return {q,sub};
@@ -112,9 +113,20 @@ function updateExamReview(root=document){
   });
 }
 
+function expandExplanationSections(){
+  const panel=document.getElementById('feedbackPanel');
+  if(!panel || panel.classList.contains('hidden')) return;
+  panel.querySelectorAll('details').forEach(detail=>{
+    const summary=detail.querySelector('summary');
+    const label=(summary?.textContent||'').trim();
+    detail.open=!label.includes('根拠資料');
+  });
+}
+
 function run(){
   updateQuestion();
   updateExamReview();
+  expandExplanationSections();
 }
 
 const observer=new MutationObserver(()=>run());
