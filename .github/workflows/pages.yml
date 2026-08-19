@@ -23,24 +23,25 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Prepare site
         shell: bash
         run: |
+          set -euo pipefail
           rm -rf dist
           mkdir -p dist
-          if [ -f site.zip ]; then
-            unzip -q site.zip -d dist
-          else
-            cat > dist/index.html <<'EOF'
-            <!doctype html><meta charset="utf-8"><title>Preparing</title><p>共通科目709 PWAを準備中です。</p>
-            EOF
-          fi
+          test -f site.zip
+          unzip -q site.zip -d dist
+          test -f dist/index.html
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: dist
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
