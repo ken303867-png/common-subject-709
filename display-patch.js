@@ -113,27 +113,60 @@ function updateExamReview(root=document){
   });
 }
 
-function expandExplanationSections(){
-  const panel=document.getElementById('feedbackPanel');
-  if(!panel || panel.classList.contains('hidden')) return;
-  panel.querySelectorAll('details').forEach(detail=>{
-    const summary=detail.querySelector('summary');
-    const label=(summary?.textContent||'').trim();
+function setDetailsState(root){
+  if(!root) return;
+  root.querySelectorAll('details').forEach(detail=>{
+    const label=(detail.querySelector('summary')?.textContent||'').trim();
     detail.open=!label.includes('根拠資料');
   });
+}
+
+function expandVisibleExplanation(){
+  const panel=document.getElementById('feedbackPanel');
+  if(panel && !panel.classList.contains('hidden')) setDetailsState(panel);
+
+  const exam=document.getElementById('examReview');
+  if(exam && !exam.classList.contains('hidden')) setDetailsState(exam);
+}
+
+function scheduleExpand(){
+  requestAnimationFrame(()=>{
+    requestAnimationFrame(expandVisibleExplanation);
+  });
+  setTimeout(expandVisibleExplanation,0);
+  setTimeout(expandVisibleExplanation,80);
 }
 
 function run(){
   updateQuestion();
   updateExamReview();
-  expandExplanationSections();
 }
 
-const observer=new MutationObserver(()=>run());
 function start(){
   run();
-  observer.observe(document.body,{subtree:true,childList:true,characterData:true});
+
+  const panel=document.getElementById('feedbackPanel');
+  if(panel){
+    const panelObserver=new MutationObserver(mutations=>{
+      if(mutations.some(x=>x.type==='attributes' && x.attributeName==='class')) scheduleExpand();
+    });
+    panelObserver.observe(panel,{attributes:true,attributeFilter:['class']});
+  }
+
+  const bodyObserver=new MutationObserver(()=>run());
+  bodyObserver.observe(document.body,{subtree:true,childList:true,characterData:true});
+
+  document.addEventListener('click',e=>{
+    if(e.target.closest('#submitBtn')) scheduleExpand();
+  },true);
+
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Enter') scheduleExpand();
+  },true);
+
+  scheduleExpand();
 }
+
 if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',start,{once:true});
 else start();
 })();
