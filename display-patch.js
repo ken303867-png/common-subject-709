@@ -1,6 +1,8 @@
 (() => {
 'use strict';
 
+const PROGRESS_STORE_KEY='common_subject_709_pwa_v1';
+
 function splitQuestion(text){
   const source=String(text||'');
   const re=/(^|[^A-Za-z0-9Ａ-Ｚａ-ｚ])([a-eA-Eａ-ｅＡ-Ｅ])\s*[．.]\s*/g;
@@ -137,9 +139,100 @@ function scheduleExpand(){
   setTimeout(expandVisibleExplanation,80);
 }
 
+function ensureStudyTargetFilter(){
+  const grid=document.querySelector('#homeView .filter-grid');
+  if(!grid) return null;
+  let select=document.getElementById('studyTargetSel');
+  if(select) return select;
+
+  const label=document.createElement('label');
+  label.id='studyTargetLabel';
+  label.append(document.createTextNode('出題対象'));
+  select=document.createElement('select');
+  select.id='studyTargetSel';
+  [
+    ['all','全問'],
+    ['unanswered','未回答'],
+    ['wrong','間違い'],
+    ['uncertain','自信なし'],
+    ['wrong_uncertain','間違い＋自信なし']
+  ].forEach(([value,text])=>{
+    const option=document.createElement('option');
+    option.value=value;
+    option.textContent=text;
+    select.appendChild(option);
+  });
+  label.appendChild(select);
+
+  const modeLabel=document.getElementById('modeSel')?.closest('label');
+  if(modeLabel) modeLabel.insertAdjacentElement('afterend',label);
+  else grid.prepend(label);
+  return select;
+}
+
+function readProgress(){
+  try{
+    const state=JSON.parse(localStorage.getItem(PROGRESS_STORE_KEY)||'{}');
+    return state && typeof state.progress==='object' && state.progress ? state.progress : {};
+  }catch(_){
+    return {};
+  }
+}
+
+function matchesStudyTarget(q,status,progress){
+  const p=progress[q.id]||{};
+  if(status==='unanswered') return !p.lastAnswer;
+  if(status==='wrong') return !!p.lastAnswer && p.lastCorrect===false;
+  if(status==='uncertain') return !!p.uncertain;
+  if(status==='wrong_uncertain') return (!!p.lastAnswer && p.lastCorrect===false) || !!p.uncertain;
+  return true;
+}
+
+function matchesCurrentFilters(q){
+  const val=id=>document.getElementById(id)?.value ?? 'all';
+  const subject=val('subjectSel');
+  const major=val('majorSel');
+  const priority=val('prioritySel');
+  const source=val('sourceSel');
+  const difficulty=val('difficultySel');
+  const type=val('typeSel');
+  return (subject==='all'||q.subject===subject) &&
+    (major==='all'||q.majorCategory===major) &&
+    (priority==='all'||q.priority===priority) &&
+    (source==='all'||q.sourceType===source) &&
+    (difficulty==='all'||q.difficulty===difficulty) &&
+    (type==='all'||q.questionType===type);
+}
+
+function updateStudyTargetCount(){
+  const select=ensureStudyTargetFilter();
+  const match=document.getElementById('matchCount');
+  const questions=window.COMMON_SUBJECT_DATA?.questions;
+  if(!select||!match||!Array.isArray(questions)) return;
+  const progress=readProgress();
+  const status=select.value;
+  const count=questions.filter(q=>matchesCurrentFilters(q)&&matchesStudyTarget(q,status,progress)).length;
+  const text=`現在の条件：${count}問`;
+  if(match.textContent!==text) match.textContent=text;
+}
+
+function routeStartByStudyTarget(e){
+  const start=e.target.closest?.('#startBtn');
+  if(!start) return;
+  const select=ensureStudyTargetFilter();
+  if(!select) return;
+  const quick=document.querySelector(`.quick-card[data-quick="${select.value}"]`);
+  if(!quick) return;
+  e.preventDefault();
+  e.stopImmediatePropagation();
+  quick.click();
+}
+
 function run(){
   updateQuestion();
   updateExamReview();
+  ensureStudyTargetFilter();
+  updateStudyTargetCount();
 }
 
 function start(){
@@ -157,12 +250,23 @@ function start(){
   bodyObserver.observe(document.body,{subtree:true,childList:true,characterData:true});
 
   document.addEventListener('click',e=>{
-    if(e.target.closest('#submitBtn')) scheduleExpand();
+    routeStartByStudyTarget(e);
+    if(e.target.closest?.('#submitBtn')) scheduleExpand();
   },true);
+
+  document.addEventListener('change',e=>{
+    if(e.target.matches?.('#studyTargetSel,#subjectSel,#majorSel,#prioritySel,#sourceSel,#difficultySel,#typeSel')){
+      setTimeout(updateStudyTargetCount,0);
+    }
+  });
 
   document.addEventListener('keydown',e=>{
     if(e.key==='Enter') scheduleExpand();
   },true);
+
+  window.addEventListener('storage',e=>{
+    if(e.key===PROGRESS_STORE_KEY) updateStudyTargetCount();
+  });
 
   scheduleExpand();
 }
