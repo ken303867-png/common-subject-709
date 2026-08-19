@@ -33,6 +33,12 @@ jobs:
           test -f site.zip
           unzip -q site.zip -d dist
           test -f dist/index.html
+          cp display-patch.js dist/display-patch.js
+          cp display-patch.css dist/display-patch.css
+          sed -i '/<\/head>/i\  <link rel="stylesheet" href="./display-patch.css?v=1">' dist/index.html
+          sed -i '/<\/body>/i\  <script src="./display-patch.js?v=1"></script>' dist/index.html
+          grep -q 'display-patch.js' dist/index.html
+          grep -q 'display-patch.css' dist/index.html
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
