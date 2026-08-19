@@ -36,13 +36,13 @@ jobs:
           test -f dist/sw.js
           cp display-patch.js dist/display-patch.js
           cp display-patch.css dist/display-patch.css
-          sed -i '/<\/head>/i\  <link rel="stylesheet" href="./display-patch.css?v=2">' dist/index.html
-          sed -i '/<\/body>/i\  <script src="./display-patch.js?v=2"></script>' dist/index.html
-          sed -i "s/const CACHE='common-subject-709-v1-2';/const CACHE='common-subject-709-v1-4';/" dist/sw.js
+          sed -i '/<\/head>/i\  <link rel="stylesheet" href="./display-patch.css?v=3">' dist/index.html
+          sed -i '/<\/body>/i\  <script src="./display-patch.js?v=3"></script>' dist/index.html
+          sed -i "s/const CACHE='common-subject-709-v1-2';/const CACHE='common-subject-709-v1-5';/" dist/sw.js
           sed -i "s#'./data.part04'#'./data.part04','./display-patch.js','./display-patch.css'#" dist/sw.js
           grep -q 'display-patch.js' dist/index.html
           grep -q 'display-patch.css' dist/index.html
-          grep -q 'common-subject-709-v1-4' dist/sw.js
+          grep -q 'common-subject-709-v1-5' dist/sw.js
           grep -q "'./display-patch.js'" dist/sw.js
 
       - name: Setup Pages
