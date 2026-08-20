@@ -34,16 +34,34 @@ jobs:
           unzip -q site.zip -d dist
           test -f dist/index.html
           test -f dist/sw.js
+          test -f dist/app.js
+
           cp display-patch.js dist/display-patch.js
           cp display-patch.css dist/display-patch.css
-          sed -i '/<\/head>/i\  <link rel="stylesheet" href="./display-patch.css?v=4">' dist/index.html
-          sed -i '/<\/body>/i\  <script src="./display-patch.js?v=4"></script>' dist/index.html
-          sed -i "s/const CACHE='common-subject-709-v1-2';/const CACHE='common-subject-709-v1-6';/" dist/sw.js
-          sed -i "s#'./data.part04'#'./data.part04','./display-patch.js','./display-patch.css'#" dist/sw.js
+          cp memory-mode-ui.js dist/memory-mode-ui.js
+          cp memory-mode.css dist/memory-mode.css
+          python3 memory-mode-patch.py dist/app.js
+
+          sed -i '/<\/head>/i\  <link rel="stylesheet" href="./display-patch.css?v=5">' dist/index.html
+          sed -i '/<\/head>/i\  <link rel="stylesheet" href="./memory-mode.css?v=1">' dist/index.html
+          sed -i '/<\/body>/i\  <script src="./display-patch.js?v=5"></script>' dist/index.html
+          sed -i '/<\/body>/i\  <script src="./memory-mode-ui.js?v=1"></script>' dist/index.html
+
+          sed -i "s/const CACHE='common-subject-709-v1-2';/const CACHE='common-subject-709-v1-7-memory';/" dist/sw.js
+          sed -i "s#'./data.part04'#'./data.part04','./display-patch.js','./display-patch.css','./memory-mode-ui.js','./memory-mode.css'#" dist/sw.js
+
           grep -q 'display-patch.js' dist/index.html
           grep -q 'display-patch.css' dist/index.html
-          grep -q 'common-subject-709-v1-6' dist/sw.js
-          grep -q "'./display-patch.js'" dist/sw.js
+          grep -q 'memory-mode-ui.js' dist/index.html
+          grep -q 'memory-mode.css' dist/index.html
+          grep -q 'MEMORY_MODE_PATCH_V1' dist/app.js
+          grep -q 'common-subject-709-v1-7-memory' dist/sw.js
+          grep -q "'./memory-mode-ui.js'" dist/sw.js
+          grep -q "'./memory-mode.css'" dist/sw.js
+
+          node --check dist/app.js
+          node --check dist/display-patch.js
+          node --check dist/memory-mode-ui.js
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

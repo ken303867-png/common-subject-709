@@ -1,0 +1,7 @@
+.memory-mode-hint{display:block;margin-top:6px;color:#607383;font-size:12px;line-height:1.5}
+.memory-mode-status{margin:0 0 14px;padding:12px 14px;border:1px solid #c9dbea;border-radius:12px;background:#f5f9fc;color:#17313f}
+.memory-mode-status.hidden{display:none}
+.memory-mode-status b{display:block;font-size:14px;margin-bottom:3px}
+.memory-mode-status span{font-size:13px;color:#526a7a}
+.memory-result-summary{margin:14px 0;padding:14px 16px;border-radius:12px;background:#eef8f1;border:1px solid #cce5d3;color:#214e34;font-weight:700;text-align:center}
+@media(max-width:640px){.memory-mode-status span{display:block}.memory-result-summary{text-align:left}}
