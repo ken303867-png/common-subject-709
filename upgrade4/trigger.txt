@@ -1,0 +1,1 @@
+Trigger validated 712 PWA build after workflow installation.
