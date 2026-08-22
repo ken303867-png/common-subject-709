@@ -4,6 +4,8 @@
     for q in patch["additions"]:
         if q["id"] in existing:
             die("duplicate addition: " + q["id"])
+        q["tags"] = " | ".join(str(q.get(k, "")) for k in ("subject", "majorCategory", "topic", "priority", "questionType", "difficulty"))
+        q["version"] = "1.65"
         questions.append(q)
         existing.add(q["id"])
 
