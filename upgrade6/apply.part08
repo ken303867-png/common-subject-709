@@ -1,0 +1,25 @@
+            die(f"legacy helper explanation remained: {q.get('id')} {f}")
+
+    got = canonical_digest(questions, patch)
+    if got != patch["canonical_sha256"]:
+        die(f"canonical digest mismatch: got={got} expected={patch['canonical_sha256']}")
+
+    if isinstance(root, dict):
+        for k in ("count", "questionCount", "total"):
+            if k in root:
+                root[k] = 712
+        for k in ("dataVersion", "data_version"):
+            if k in root:
+                root[k] = patch["target_data_version"]
+        if "version" in root and isinstance(root["version"], str):
+            root["version"] = "1.65"
+
+    encoded = encode_data(root, kind)
+    n = len(parts)
+    # Preserve the same number and filenames; concatenation reconstructs exactly one encoded stream.
+    cuts = [round(len(encoded) * i / n) for i in range(n + 1)]
+    for i, p in enumerate(parts):
+        p.write_bytes(encoded[cuts[i]:cuts[i+1]])
+
+    patch_ui_files()
+    (DIST / "DATASET_VERSION.txt").write_tex

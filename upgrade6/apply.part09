@@ -1,0 +1,9 @@
+t(
+        "common-subject-712\nv1.65_FINAL_712\n712 questions\n"
+        f"canonical_sha256={got}\nencoding={kind}\n",
+        encoding="utf-8",
+    )
+    print(f"OK: patched 709 -> 712; encoding={kind}; sha256={got}")
+
+if __name__ == "__main__":
+    main()

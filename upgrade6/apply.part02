@@ -1,0 +1,31 @@
+ by prior PWA builds.
+    direct = json_parse(raw)
+    if direct is not None:
+        return direct, "raw-json"
+
+    decompressors = {
+        "gzip": gzip.decompress,
+        "bz2": bz2.decompress,
+        "xz": lzma.decompress,
+        "zlib": zlib.decompress,
+    }
+    for name, fn in decompressors.items():
+        try:
+            obj = json_parse(fn(raw))
+            if obj is not None:
+                return obj, name
+        except Exception:
+            pass
+
+    # Most historical builds store one base64 stream split across data.partXX files.
+    try:
+        txt = raw.decode("ascii")
+        compact = re.sub(r"\s+", "", txt)
+        if compact and re.fullmatch(r"[A-Za-z0-9+/=]+", compact):
+            decoded = base64.b64decode(compact, validate=True)
+            obj = json_parse(decoded)
+            if obj is not None:
+                return obj, "base64-json"
+            for name, fn in decompressors.items():
+                try:
+                    obj = json_parse(fn(decod

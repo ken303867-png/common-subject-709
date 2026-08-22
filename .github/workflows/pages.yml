@@ -24,7 +24,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Prepare site
+      - name: Prepare 712-question site
         shell: bash
         run: |
           set -euo pipefail
@@ -36,26 +36,30 @@ jobs:
           test -f dist/sw.js
           test -f dist/app.js
 
+          cat upgrade6/apply.part* > /tmp/apply_712.py
+          python3 /tmp/apply_712.py dist upgrade6
+          test -f dist/DATASET_VERSION.txt
+          grep -q 'v1.65_FINAL_712' dist/DATASET_VERSION.txt
+          grep -q '712 questions' dist/DATASET_VERSION.txt
+          grep -q 'canonical_sha256=13f5e6fb46c20e44c49a1046a5fba0f87e638fce80e746ff3d0cfc3da6ae9bc7' dist/DATASET_VERSION.txt
+
           cp display-patch.js dist/display-patch.js
           cp display-patch.css dist/display-patch.css
           cp memory-mode-ui.js dist/memory-mode-ui.js
           cp memory-mode.css dist/memory-mode.css
           python3 memory-mode-patch.py dist/app.js
 
-          sed -i '/<\/head>/i\  <link rel="stylesheet" href="./display-patch.css?v=5">' dist/index.html
-          sed -i '/<\/head>/i\  <link rel="stylesheet" href="./memory-mode.css?v=1">' dist/index.html
-          sed -i '/<\/body>/i\  <script src="./display-patch.js?v=5"></script>' dist/index.html
-          sed -i '/<\/body>/i\  <script src="./memory-mode-ui.js?v=1"></script>' dist/index.html
+          sed -i '/<\/head>/i\  <link rel="stylesheet" href="./display-patch.css?v=6">' dist/index.html
+          sed -i '/<\/head>/i\  <link rel="stylesheet" href="./memory-mode.css?v=2">' dist/index.html
+          sed -i '/<\/body>/i\  <script src="./display-patch.js?v=6"></script>' dist/index.html
+          sed -i '/<\/body>/i\  <script src="./memory-mode-ui.js?v=2"></script>' dist/index.html
 
-          sed -i "s/const CACHE='common-subject-709-v1-2';/const CACHE='common-subject-709-v1-7-memory';/" dist/sw.js
+          sed -i "s/const CACHE='common-subject-709-v1-2';/const CACHE='common-subject-712-v1-65-memory';/" dist/sw.js
           sed -i "s#'./data.part04'#'./data.part04','./display-patch.js','./display-patch.css','./memory-mode-ui.js','./memory-mode.css'#" dist/sw.js
 
-          grep -q 'display-patch.js' dist/index.html
-          grep -q 'display-patch.css' dist/index.html
-          grep -q 'memory-mode-ui.js' dist/index.html
-          grep -q 'memory-mode.css' dist/index.html
+          grep -q '712問' dist/index.html
           grep -q 'MEMORY_MODE_PATCH_V1' dist/app.js
-          grep -q 'common-subject-709-v1-7-memory' dist/sw.js
+          grep -q 'common-subject-712-v1-65-memory' dist/sw.js
           grep -q "'./memory-mode-ui.js'" dist/sw.js
           grep -q "'./memory-mode.css'" dist/sw.js
 

@@ -1,0 +1,26 @@
+DIST.glob("data.part*"))
+    if not parts:
+        die("dist/data.partXX files not found")
+    raw = b"".join(p.read_bytes() for p in parts)
+    root, kind = decode_data(raw)
+    questions = locate_questions(root)
+    if len(questions) != 709:
+        die(f"expected 709 existing questions, got {len(questions)}")
+    by_id = {q.get("id"): q for q in questions}
+    if len(by_id) != 709:
+        die("existing question IDs are not unique")
+
+    for q in questions:
+        for f in patch["clear_fields"]:
+            q[f] = ""
+
+    for qid, changes in patch["updates"].items():
+        if qid not in by_id:
+            die("update target missing: " + qid)
+        by_id[qid].update(changes)
+
+    for q in questions:
+        # Keep the existing app's tags field type for compatibility; rebuild from new visible metadata.
+        q["tags"] = " | ".join(str(q.get(k, "")) for k in
+                               ("subject", "majorCategory", "topic", "priority", "questionType", "difficulty"))
+        q[

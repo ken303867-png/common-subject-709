@@ -1,0 +1,29 @@
+ed))
+                    if obj is not None:
+                        return obj, "base64-" + name
+                except Exception:
+                    pass
+    except Exception:
+        pass
+
+    die("unsupported existing data.part encoding; prefix=" + repr(raw[:80]))
+
+def encode_data(root, kind):
+    body = json.dumps(root, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    if kind == "raw-json":
+        return body
+    if kind == "gzip":
+        return gzip.compress(body, compresslevel=9, mtime=0)
+    if kind == "bz2":
+        return bz2.compress(body, compresslevel=9)
+    if kind == "xz":
+        return lzma.compress(body, preset=9)
+    if kind == "zlib":
+        return zlib.compress(body, level=9)
+    if kind == "base64-json":
+        return base64.b64encode(body)
+    if kind == "base64-gzip":
+        return base64.b64encode(gzip.compress(body, compresslevel=9, mtime=0))
+    if kind == "base64-bz2":
+        return base64.b64encode(bz2.compress(body, compresslevel=9))
+ 

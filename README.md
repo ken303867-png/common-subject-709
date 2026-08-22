@@ -1,39 +1,10 @@
-# 共通科目 試験対策709 PWA
+# Common Subject 712 PWA
 
-- データ: v1.47
-- 問題数: 709
-- ID: LEARN-COM-001 ～ LEARN-COM-709
-- 学習モード: 解答後に正誤・解説を表示
-- 模試モード: 最後に一括採点し、解答・解説を確認
-- 暗記モード: 選択した問題を覚えるまで自動周回
-- 復習: 未回答 / 間違い / 自信なし / 間違い＋自信なし / お気に入り
-- 絞り込み: 科目 / 大分類 / 優先度 / 既存・予想 / 難易度 / 問題形式
-- 保存: localStorage (`common_subject_709_pwa_v1`)
-- バックアップ: JSON書き出し・読み込み
-- オフライン: Service Worker
+- Data: v1.65_FINAL_712
+- Questions: LEARN-COM-001 through LEARN-COM-712
+- Learning mode, exam mode, review filters and memorize-until-mastered mode are retained.
+- The Pages build validates the 712-question dataset before deployment.
+- New storage namespace: `common_subject_712_pwa_v1`.
 
-## データQA
-アップロードされたv1.47 manifest:
-- ID欠損: 0
-- ID重複: 0
-- 必須項目欠損: 0
-- 不正解答値: 0
-- 選択肢数不整合: 0
-- 正答が空欄を指す: 0
-- 完全重複(問題文+選択肢): 0
-
-## v1.1
-解答後ロック、解答済み再開時の二重採点防止、模試一括保存、再開ボタン状態表示を追加。
-
-## v1.2 deployment packaging
-709問データをgzip+Base64の8分割データファイルとして格納し、起動時に復元する。展開後データはv1.47 JSONとバイトレベルで一致することをQA済み。
-
-## v1.3 暗記モード
-- 既存の学習モード・模試モードを維持したまま「暗記モード（覚えるまで周回）」を追加。
-- 現在の絞り込み条件・出題対象・出題数で選ばれた問題を暗記対象にする。
-- 正解かつ「自信なし」なしの問題は暗記済みとして次周から除外する。
-- 不正解、または「自信なし」の問題だけを次周へ残す。
-- 2周目以降は残問をランダム化して再出題する。
-- 残り0問になるまで周回し、完了時に周回数と暗記完了数を表示する。
-- 暗記モードの周回数・残問・暗記済み問題を既存localStorage内の `lastSession` に保存し、途中から再開可能。
-- 暗記モードでの各解答結果も通常の正解 / 不正解 / 自信なし履歴へ反映する。
+## v1.65 data switch
+The existing PWA UI is retained while the v1.47/709 question data is replaced at build time with the validated v1.65/712 dataset. Question text, choices, answers, explanations, option explanations, related knowledge, key points, mnemonic and sources are checked before deployment.

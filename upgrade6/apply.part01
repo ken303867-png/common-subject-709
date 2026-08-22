@@ -1,0 +1,32 @@
+#!/usr/bin/env python3
+import base64, bz2, gzip, hashlib, json, lzma, re, sys, zlib
+from pathlib import Path
+
+DIST = Path(sys.argv[1] if len(sys.argv) > 1 else "dist")
+PATCH_DIR = Path(sys.argv[2] if len(sys.argv) > 2 else "upgrade6")
+
+def die(msg):
+    raise SystemExit("ERROR: " + msg)
+
+def load_patch():
+    files = sorted(PATCH_DIR.glob("patch.chunk*"))
+    if not files:
+        die("patch chunks not found")
+    text = "".join(p.read_text(encoding="ascii").strip() for p in files)
+    try:
+        raw = bz2.decompress(base64.b64decode(text, validate=True))
+        p = json.loads(raw.decode("utf-8"))
+    except Exception as e:
+        die(f"cannot decode patch: {e}")
+    if p.get("schema") != "common-subject-712-delta-v6":
+        die("unexpected patch schema")
+    return p
+
+def json_parse(data):
+    try:
+        return json.loads(data.decode("utf-8"))
+    except Exception:
+        return None
+
+def decode_data(raw):
+    # Returns (root, encoding_kind). Supports the compact formats used

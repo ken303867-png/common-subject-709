@@ -1,0 +1,26 @@
+   if kind == "base64-xz":
+        return base64.b64encode(lzma.compress(body, preset=9))
+    if kind == "base64-zlib":
+        return base64.b64encode(zlib.compress(body, level=9))
+    die("cannot re-encode kind=" + kind)
+
+def locate_questions(root):
+    if isinstance(root, list) and root and isinstance(root[0], dict) and "id" in root[0]:
+        return root
+    if isinstance(root, dict):
+        for key in ("questions", "items", "data"):
+            v = root.get(key)
+            if isinstance(v, list) and (not v or (isinstance(v[0], dict) and "id" in v[0])):
+                return v
+        for v in root.values():
+            if isinstance(v, list) and v and isinstance(v[0], dict) and "id" in v[0] and "question" in v[0]:
+                return v
+    die("question list not found in decoded data")
+
+def project(q, patch):
+    d = {k: q.get(k) for k in patch["visible_fields"]}
+    for f in patch["clear_fields"]:
+        d[f] = q.get(f, "")
+    return d
+
+def canonical_digest(questions, pa

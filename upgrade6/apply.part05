@@ -1,0 +1,24 @@
+tch):
+    data = [project(q, patch) for q in questions]
+    raw = json.dumps(data, ensure_ascii=False, separators=(",", ":"), sort_keys=True).encode("utf-8")
+    return hashlib.sha256(raw).hexdigest()
+
+def patch_ui_files():
+    # Keep the existing UI/features; only retarget labels, storage namespace and cache identity.
+    for name in ("app.js", "index.html", "manifest.webmanifest"):
+        p = DIST / name
+        if not p.exists():
+            continue
+        s = p.read_text(encoding="utf-8")
+        s = s.replace("common_subject_709_pwa_v1", "common_subject_712_pwa_v1")
+        s = s.replace("common-subject-709", "common-subject-712")
+        s = s.replace("709問", "712問")
+        s = s.replace("709 Questions", "712 Questions")
+        s = s.replace("v1.47", "v1.65")
+        # Hard-coded validation/count literals in the historical app.
+        s = re.sub(r'(?<!\d)709(?!\d)', '712', s)
+        p.write_text(s, encoding="utf-8")
+
+def main():
+    patch = load_patch()
+    parts = sorted(

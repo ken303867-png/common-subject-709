@@ -1,0 +1,26 @@
+"version"] = "1.65"
+
+    existing = set(by_id)
+    for q in patch["additions"]:
+        if q["id"] in existing:
+            die("duplicate addition: " + q["id"])
+        questions.append(q)
+        existing.add(q["id"])
+
+    expected_ids = [f"LEARN-COM-{i:03d}" for i in range(1, 713)]
+    actual_ids = [q.get("id") for q in questions]
+    if actual_ids != expected_ids:
+        die("ID sequence mismatch after patch")
+    if len(questions) != patch["target_count"]:
+        die("target question count mismatch")
+
+    for q in questions:
+        if q.get("answer") not in ("A", "B", "C", "D"):
+            die("invalid answer: " + str(q.get("id")))
+        for k in ("question","choiceA","choiceB","choiceC","choiceD","explanation",
+                  "optionExplanations","relatedKnowledge","keyPoints","mnemonic","sources"):
+            if not str(q.get(k, "")).strip():
+                die(f"empty {k}: {q.get('id')}")
+        for f in patch["clear_fields"]:
+            if q.get(f, "") != "":
+    
