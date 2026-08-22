@@ -1,0 +1,28 @@
+name: Build clean 712 PWA
+on:
+  push:
+    branches: ["feature/replace-with-712-v165-clean"]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/replace-with-712-v165-clean
+      - name: Build and validate
+        run: |
+          set -euo pipefail
+          python3 upgrade4/build_712.py
+          unzip -p site.zip index.html | grep -q '試験対策712'
+      - name: Commit generated site
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- site.zip; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add site.zip
+          git commit -m 'Build clean 712 PWA site'
+          git push origin HEAD:feature/replace-with-712-v165-clean
