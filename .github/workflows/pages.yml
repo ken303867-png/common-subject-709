@@ -47,19 +47,22 @@ jobs:
           cp display-patch.css dist/display-patch.css
           cp memory-mode-ui.js dist/memory-mode-ui.js
           cp memory-mode.css dist/memory-mode.css
+          sed -i "s/common_subject_709_pwa_v1/common_subject_712_pwa_v1/g" dist/display-patch.js
           python3 memory-mode-patch.py dist/app.js
 
-          sed -i '/<\/head>/i\  <link rel="stylesheet" href="./display-patch.css?v=6">' dist/index.html
+          sed -i '/<\/head>/i\  <link rel="stylesheet" href="./display-patch.css?v=7">' dist/index.html
           sed -i '/<\/head>/i\  <link rel="stylesheet" href="./memory-mode.css?v=2">' dist/index.html
-          sed -i '/<\/body>/i\  <script src="./display-patch.js?v=6"></script>' dist/index.html
+          sed -i '/<\/body>/i\  <script src="./display-patch.js?v=7"></script>' dist/index.html
           sed -i '/<\/body>/i\  <script src="./memory-mode-ui.js?v=2"></script>' dist/index.html
 
-          sed -i "s/const CACHE='common-subject-709-v1-2';/const CACHE='common-subject-712-v1-65-memory';/" dist/sw.js
+          sed -i "s/const CACHE='common-subject-709-v1-2';/const CACHE='common-subject-712-v1-65-memory-2';/" dist/sw.js
           sed -i "s#'./data.part04'#'./data.part04','./display-patch.js','./display-patch.css','./memory-mode-ui.js','./memory-mode.css'#" dist/sw.js
 
           grep -q '712問' dist/index.html
           grep -q 'MEMORY_MODE_PATCH_V1' dist/app.js
-          grep -q 'common-subject-712-v1-65-memory' dist/sw.js
+          grep -q 'common_subject_712_pwa_v1' dist/display-patch.js
+          ! grep -q 'common_subject_709_pwa_v1' dist/display-patch.js
+          grep -q 'common-subject-712-v1-65-memory-2' dist/sw.js
           grep -q "'./memory-mode-ui.js'" dist/sw.js
           grep -q "'./memory-mode.css'" dist/sw.js
 
