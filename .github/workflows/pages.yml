@@ -24,7 +24,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Prepare 712-question site
+      - name: Prepare 712-question v1.66 site
         shell: bash
         run: |
           set -euo pipefail
@@ -36,6 +36,7 @@ jobs:
           test -f dist/sw.js
           test -f dist/app.js
 
+          # Reconstruct the current v1.65 public dataset first.
           cat upgrade6/apply.part* > /tmp/apply_712.py
           python3 /tmp/apply_712.py dist upgrade6
           test -f dist/DATASET_VERSION.txt
@@ -43,6 +44,18 @@ jobs:
           grep -q '712 questions' dist/DATASET_VERSION.txt
           grep -q 'canonical_sha256=13f5e6fb46c20e44c49a1046a5fba0f87e638fce80e746ff3d0cfc3da6ae9bc7' dist/DATASET_VERSION.txt
 
+          # Apply the QA-approved v1.66 delta. This guards both the full base
+          # canonical digest and the final v1.66 canonical digest.
+          python3 upgrade7/apply_v166.py dist upgrade7/v1.66_patch.json /tmp/apply_712.py
+          grep -q 'v1.66_FINAL_712' dist/DATASET_VERSION.txt
+          grep -q '712 questions' dist/DATASET_VERSION.txt
+          grep -q 'changes=20' dist/DATASET_VERSION.txt
+          grep -q 'answer_changes=0' dist/DATASET_VERSION.txt
+          grep -q 'question_changes=0' dist/DATASET_VERSION.txt
+          grep -q 'choice_changes=0' dist/DATASET_VERSION.txt
+          grep -q 'canonical_sha256=c47fb62f5fe7c398099b237539bbafdfaea2ca035600e5f6760bcf8b9cd8cc73' dist/DATASET_VERSION.txt
+
+          # Apply the existing display and memory-mode UI layers unchanged.
           cp display-patch.js dist/display-patch.js
           cp display-patch.css dist/display-patch.css
           cp memory-mode-ui.js dist/memory-mode-ui.js
@@ -55,20 +68,52 @@ jobs:
           sed -i '/<\/body>/i\  <script src="./display-patch.js?v=7"></script>' dist/index.html
           sed -i '/<\/body>/i\  <script src="./memory-mode-ui.js?v=2"></script>' dist/index.html
 
-          sed -i "s/const CACHE='common-subject-709-v1-2';/const CACHE='common-subject-712-v1-65-memory-2';/" dist/sw.js
+          sed -i "s/const CACHE='common-subject-709-v1-2';/const CACHE='common-subject-712-v1-66-memory-2';/" dist/sw.js
           sed -i "s#'./data.part04'#'./data.part04','./display-patch.js','./display-patch.css','./memory-mode-ui.js','./memory-mode.css'#" dist/sw.js
 
+          # Final production validation before upload.
           grep -q '712問' dist/index.html
           grep -q 'MEMORY_MODE_PATCH_V1' dist/app.js
           grep -q 'common_subject_712_pwa_v1' dist/display-patch.js
           ! grep -q 'common_subject_709_pwa_v1' dist/display-patch.js
-          grep -q 'common-subject-712-v1-65-memory-2' dist/sw.js
+          grep -q 'common-subject-712-v1-66-memory-2' dist/sw.js
           grep -q "'./memory-mode-ui.js'" dist/sw.js
           grep -q "'./memory-mode.css'" dist/sw.js
 
           node --check dist/app.js
           node --check dist/display-patch.js
           node --check dist/memory-mode-ui.js
+          node --check dist/sw.js
+
+          python3 - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+
+          q = json.loads(Path('dist/DATASET_712_V166_AUDIT.json').read_text(encoding='utf-8'))
+          assert len(q) == 712
+          assert [x['id'] for x in q] == [f'LEARN-COM-{i:03d}' for i in range(1, 713)]
+          assert all(x['answer'] in ('A','B','C','D') for x in q)
+          assert all(x['question'].strip() for x in q)
+          assert all(all(x[f'choice{k}'].strip() for k in 'ABCD') for x in q)
+          assert all(x['explanation'].strip() for x in q)
+          assert all(x['optionExplanations'].strip() for x in q)
+
+          raw = json.dumps(q, ensure_ascii=False, sort_keys=True, separators=(',', ':')).encode('utf-8')
+          digest = hashlib.sha256(raw).hexdigest()
+          assert digest == 'c47fb62f5fe7c398099b237539bbafdfaea2ca035600e5f6760bcf8b9cd8cc73', digest
+
+          q317 = q[316]
+          assert q317['id'] == 'LEARN-COM-317'
+          assert q317['answer'] == 'C'
+          assert '乏尿は誤答' not in q317['explanation']
+          assert 'Cが正答' in q317['explanation']
+          print('PRODUCTION_V166_DATA_QA_PASS')
+          PY
+
+          # The readable QA copy is useful in CI artifacts but is not needed
+          # in the public Pages payload; the app continues to use data.partXX.
+          rm -f dist/DATASET_712_V166_AUDIT.json
+          test ! -e dist/DATASET_712_V166_AUDIT.json
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
