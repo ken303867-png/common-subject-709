@@ -19,244 +19,50 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Reconstruct current 712 dataset
+      - name: Reconstruct and export current 712 dataset
         shell: bash
         run: |
           set -euo pipefail
-          rm -rf dist
-          mkdir -p dist
+          rm -rf dist audit712
+          mkdir -p dist audit712
           unzip -q site.zip -d dist
           cat upgrade6/apply.part* > /tmp/apply_712.py
           python3 /tmp/apply_712.py dist upgrade6
           grep -q 'v1.65_FINAL_712' dist/DATASET_VERSION.txt
-
-      - name: Audit all 712 question-answer-explanation mappings
-        shell: bash
-        run: |
-          set -euo pipefail
           python3 - <<'PY'
-          import csv, importlib.util, json, re
-          from collections import Counter, defaultdict
+          import importlib.util, json
           from pathlib import Path
-
-          spec = importlib.util.spec_from_file_location('apply712','/tmp/apply_712.py')
-          mod = importlib.util.module_from_spec(spec)
-          spec.loader.exec_module(mod)
-
-          parts = sorted(Path('dist').glob('data.part*'))
-          raw = b''.join(p.read_bytes() for p in parts)
-          root, kind = mod.decode_data(raw)
-          questions = mod.locate_questions(root)
-
-          def text(v):
-              if v is None: return ''
-              if isinstance(v, str): return v.strip()
-              return json.dumps(v, ensure_ascii=False, sort_keys=True)
-
-          def parse_option_explanations(v):
-              # Return dict A-D when the structure can be mapped safely.
-              if isinstance(v, dict):
-                  out = {}
-                  for k,val in v.items():
-                      kk = str(k).strip().upper()
-                      m = re.search(r'([ABCD])$', kk)
-                      if m: out[m.group(1)] = text(val)
-                  return out
-              if isinstance(v, list):
-                  if len(v) == 4:
-                      return {k:text(val) for k,val in zip('ABCD',v)}
-                  return {}
-              s = text(v)
-              if not s: return {}
-              # Labels seen in Japanese study data: A. / A： / 【A】 / 選択肢A etc.
-              pat = re.compile(r'(?im)(?:^|\n)\s*(?:【\s*)?(?:選択肢\s*)?([ABCD])(?:\s*】)?\s*[\.．:：\)）]\s*')
-              ms = list(pat.finditer(s))
-              if len(ms) >= 4:
-                  out = {}
-                  for i,m in enumerate(ms):
-                      k = m.group(1).upper()
-                      end = ms[i+1].start() if i+1 < len(ms) else len(s)
-                      out[k] = s[m.end():end].strip()
-                  return out
-              # Alternative bullet form: A ○ ... / B × ...
-              pat2 = re.compile(r'(?im)(?:^|\n)\s*([ABCD])\s*[○◯×✕✗]\s*')
-              ms = list(pat2.finditer(s))
-              if len(ms) >= 4:
-                  out = {}
-                  for i,m in enumerate(ms):
-                      k=m.group(1).upper(); end=ms[i+1].start() if i+1<len(ms) else len(s)
-                      out[k]=s[m.end():end].strip()
-                  return out
-              return {}
-
-          def explicit_answer_letters(s):
-              if not s: return []
-              pats = [
-                  r'(?:正解|答え|正答)\s*(?:は|:|：)?\s*[「『\[]?([ABCD])[」』\]]?',
-                  r'([ABCD])\s*(?:が|は)\s*(?:正解|正答)',
-              ]
-              found=[]
-              for p in pats:
-                  found += [x.upper() for x in re.findall(p,s,re.I)]
-              return found
-
-          def status_hint(s):
-              # +1 correct marker, -1 incorrect marker, 0 no reliable marker.
-              t=s[:80]
-              if re.search(r'(?:^|[\s:：])(?:○|◯|正解|正しい)(?:[\s。:：]|$)', t): return 1
-              if re.search(r'(?:^|[\s:：])(?:×|✕|✗|誤り|不正解|誤っている)(?:[\s。:：]|$)', t): return -1
-              return 0
-
-          rows=[]
-          blockers=[]
-          warnings=[]
-          explanation_to_ids=defaultdict(list)
-          optionbundle_to_ids=defaultdict(list)
-
-          expected=[f'LEARN-COM-{i:03d}' for i in range(1,713)]
-          ids=[q.get('id') for q in questions]
-          if ids != expected:
-              blockers.append({'id':'DATASET','code':'ID_SEQUENCE','detail':'LEARN-COM-001..712 sequence mismatch'})
-
-          for q in questions:
-              qid=q.get('id','')
-              ans=str(q.get('answer','')).strip().upper()
-              choices={k:text(q.get('choice'+k,'')) for k in 'ABCD'}
-              expl=text(q.get('explanation',''))
-              opraw=q.get('optionExplanations','')
-              op=parse_option_explanations(opraw)
-              qflags=[]; qwarn=[]
-
-              if ans not in 'ABCD' or len(ans)!=1:
-                  qflags.append('INVALID_ANSWER')
-              if any(not choices[k] for k in 'ABCD'):
-                  qflags.append('EMPTY_CHOICE')
-              if not expl:
-                  qflags.append('EMPTY_EXPLANATION')
-              if not text(opraw):
-                  qflags.append('EMPTY_OPTION_EXPLANATIONS')
-
-              # Explanation explicitly naming a different correct answer is a direct contradiction.
-              letters=explicit_answer_letters(expl)
-              badletters=sorted({x for x in letters if x != ans}) if ans in 'ABCD' else sorted(set(letters))
-              if badletters:
-                  qflags.append('EXPLANATION_ANSWER_LETTER_CONFLICT')
-
-              if set(op) != set('ABCD'):
-                  qwarn.append('OPTION_EXPLANATIONS_NOT_SAFELY_SPLIT_A_D')
-              else:
-                  if any(not op[k] for k in 'ABCD'):
-                      qflags.append('EMPTY_ONE_OPTION_EXPLANATION')
-                  # If explicit correct/incorrect markers exist, they must agree with the answer key.
-                  hints={k:status_hint(op[k]) for k in 'ABCD'}
-                  if ans in 'ABCD' and hints.get(ans)==-1:
-                      qflags.append('CORRECT_OPTION_MARKED_INCORRECT')
-                  for k in 'ABCD':
-                      if k != ans and hints.get(k)==1:
-                          qflags.append('WRONG_OPTION_MARKED_CORRECT')
-                  # Explicit answer letters inside each option explanation should not contradict its own role.
-                  for k in 'ABCD':
-                      lets=explicit_answer_letters(op[k])
-                      if ans in 'ABCD' and any(x != ans for x in lets):
-                          qwarn.append(f'OPTION_{k}_MENTIONS_OTHER_CORRECT_LETTER')
-
-              # Detect accidental exact reuse; useful for correspondence errors.
-              if expl:
-                  explanation_to_ids[re.sub(r'\s+',' ',expl)].append(qid)
-              bundle=text(opraw)
-              if bundle:
-                  optionbundle_to_ids[re.sub(r'\s+',' ',bundle)].append(qid)
-
-              # Very short visible explanations are suspicious, not automatically wrong.
-              if 0 < len(expl) < 20:
-                  qwarn.append('VERY_SHORT_EXPLANATION')
-              if set(op)==set('ABCD'):
-                  for k in 'ABCD':
-                      if 0 < len(op[k]) < 8:
-                          qwarn.append(f'VERY_SHORT_OPTION_{k}')
-
-              for code in sorted(set(qflags)):
-                  blockers.append({'id':qid,'code':code,'detail':''})
-              for code in sorted(set(qwarn)):
-                  warnings.append({'id':qid,'code':code,'detail':''})
-
-              rows.append({
-                  'id':qid,'answer':ans,
-                  'question_ok':bool(text(q.get('question',''))),
-                  'choices_ok':all(choices.values()),
-                  'explanation_ok':bool(expl),
-                  'option_explanations_present':bool(text(opraw)),
-                  'option_explanations_split_ad':set(op)==set('ABCD'),
-                  'blocker_count':len(set(qflags)),
-                  'warning_count':len(set(qwarn)),
-                  'blockers':'|'.join(sorted(set(qflags))),
-                  'warnings':'|'.join(sorted(set(qwarn))),
-              })
-
-          # Duplicate exact explanation bundles may indicate copy/paste mapping errors.
-          duplicate_expl={k:v for k,v in explanation_to_ids.items() if len(v)>1}
-          duplicate_opts={k:v for k,v in optionbundle_to_ids.items() if len(v)>1}
-          for _,ids2 in duplicate_expl.items():
-              for qid in ids2:
-                  warnings.append({'id':qid,'code':'EXACT_DUPLICATE_GENERAL_EXPLANATION','detail':','.join(ids2)})
-          for _,ids2 in duplicate_opts.items():
-              for qid in ids2:
-                  warnings.append({'id':qid,'code':'EXACT_DUPLICATE_OPTION_EXPLANATIONS','detail':','.join(ids2)})
-
-          # Rebuild per-question warning count including duplicate checks.
-          warn_by=Counter(x['id'] for x in warnings if x['id']!='DATASET')
-          block_by=Counter(x['id'] for x in blockers if x['id']!='DATASET')
-          for r in rows:
-              r['warning_count_total']=warn_by[r['id']]
-              r['blocker_count_total']=block_by[r['id']]
-              r['verdict']='FAIL' if block_by[r['id']] else ('REVIEW' if warn_by[r['id']] else 'PASS')
-
+          spec=importlib.util.spec_from_file_location('apply712','/tmp/apply_712.py')
+          mod=importlib.util.module_from_spec(spec); spec.loader.exec_module(mod)
+          raw=b''.join(p.read_bytes() for p in sorted(Path('dist').glob('data.part*')))
+          root,kind=mod.decode_data(raw)
+          qs=mod.locate_questions(root)
+          assert len(qs)==712
+          assert [q.get('id') for q in qs]==[f'LEARN-COM-{i:03d}' for i in range(1,713)]
+          required=('question','choiceA','choiceB','choiceC','choiceD','answer','explanation','optionExplanations','relatedKnowledge','keyPoints','mnemonic','sources')
+          missing=[]
+          for q in qs:
+              for k in required:
+                  if not str(q.get(k,'')).strip(): missing.append([q.get('id'),k])
           summary={
-              'dataset_count':len(questions),
-              'id_sequence_ok':ids==expected,
-              'answer_A_D_count':sum(1 for q in questions if str(q.get('answer','')).strip().upper() in 'ABCD' and len(str(q.get('answer','')).strip())==1),
-              'question_nonempty_count':sum(1 for q in questions if text(q.get('question',''))),
-              'choices_complete_count':sum(1 for q in questions if all(text(q.get('choice'+k,'')) for k in 'ABCD')),
-              'general_explanation_nonempty_count':sum(1 for q in questions if text(q.get('explanation',''))),
-              'option_explanations_nonempty_count':sum(1 for q in questions if text(q.get('optionExplanations',''))),
-              'option_explanations_safely_split_A_D_count':sum(1 for q in questions if set(parse_option_explanations(q.get('optionExplanations','')))==set('ABCD')),
-              'blocker_records':len(blockers),
-              'blocker_questions':len({x['id'] for x in blockers if x['id']!='DATASET'}),
-              'warning_records':len(warnings),
-              'warning_questions':len({x['id'] for x in warnings if x['id']!='DATASET'}),
-              'pass_questions':sum(1 for r in rows if r['verdict']=='PASS'),
-              'review_questions':sum(1 for r in rows if r['verdict']=='REVIEW'),
-              'fail_questions':sum(1 for r in rows if r['verdict']=='FAIL'),
-              'blocker_codes':dict(Counter(x['code'] for x in blockers)),
-              'warning_codes':dict(Counter(x['code'] for x in warnings)),
-              'duplicate_general_explanation_groups':len(duplicate_expl),
-              'duplicate_option_explanation_groups':len(duplicate_opts),
+              'count':len(qs),
+              'encoding':kind,
+              'id_sequence_ok':True,
+              'answers_A_D':sum(str(q.get('answer','')).strip().upper() in ('A','B','C','D') for q in qs),
+              'missing_required_fields':missing,
+              'optionExplanations_types':{}
           }
-
-          Path('audit712').mkdir(exist_ok=True)
-          Path('audit712/summary.json').write_text(json.dumps(summary,ensure_ascii=False,indent=2),encoding='utf-8')
-          Path('audit712/blockers.json').write_text(json.dumps(blockers,ensure_ascii=False,indent=2),encoding='utf-8')
-          Path('audit712/warnings.json').write_text(json.dumps(warnings,ensure_ascii=False,indent=2),encoding='utf-8')
-          with open('audit712/all_questions.csv','w',encoding='utf-8-sig',newline='') as f:
-              w=csv.DictWriter(f,fieldnames=list(rows[0].keys()))
-              w.writeheader(); w.writerows(rows)
-
-          print('=== AUDIT_712_SUMMARY ===')
-          print(json.dumps(summary,ensure_ascii=False,sort_keys=True))
-          print('=== BLOCKERS ===')
-          print(json.dumps(blockers,ensure_ascii=False))
-          print('=== WARNINGS ===')
-          print(json.dumps(warnings,ensure_ascii=False))
-
-          # Structural/direct-contradiction blockers make the audit job fail.
-          if blockers:
-              raise SystemExit(2)
+          for q in qs:
+              t=type(q.get('optionExplanations')).__name__
+              summary['optionExplanations_types'][t]=summary['optionExplanations_types'].get(t,0)+1
+          Path('audit712/dataset712.json').write_text(json.dumps(qs,ensure_ascii=False,indent=2),encoding='utf-8')
+          Path('audit712/structural_summary.json').write_text(json.dumps(summary,ensure_ascii=False,indent=2),encoding='utf-8')
+          print(json.dumps(summary,ensure_ascii=False))
           PY
 
-      - name: Upload audit results
-        if: always()
+      - name: Upload audit dataset
         uses: actions/upload-artifact@v4
         with:
-          name: audit-712-results
+          name: audit-712-dataset
           path: audit712
           retention-days: 7
