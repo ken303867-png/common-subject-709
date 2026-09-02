@@ -6,6 +6,7 @@ on:
     paths:
       - "upgrade7/**"
       - ".github/workflows/predeploy-v166.yml"
+      - ".github/workflows/pages.yml"
       - "site.zip"
       - "upgrade6/**"
       - "display-patch.js"
@@ -24,6 +25,21 @@ jobs:
     steps:
       - name: Checkout staging branch
         uses: actions/checkout@v4
+
+      - name: Verify production Pages workflow contains v1.66 integration
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'Prepare 712-question v1.66 site' .github/workflows/pages.yml
+          grep -q 'python3 upgrade7/apply_v166.py dist upgrade7/v1.66_patch.json /tmp/apply_712.py' .github/workflows/pages.yml
+          grep -q 'v1.66_FINAL_712' .github/workflows/pages.yml
+          grep -q 'canonical_sha256=c47fb62f5fe7c398099b237539bbafdfaea2ca035600e5f6760bcf8b9cd8cc73' .github/workflows/pages.yml
+          grep -q 'common-subject-712-v1-66-memory-2' .github/workflows/pages.yml
+          grep -q 'PRODUCTION_V166_DATA_QA_PASS' .github/workflows/pages.yml
+          grep -q 'rm -f dist/DATASET_712_V166_AUDIT.json' .github/workflows/pages.yml
+          grep -q 'actions/upload-pages-artifact@v3' .github/workflows/pages.yml
+          grep -q 'actions/deploy-pages@v4' .github/workflows/pages.yml
+          echo 'PAGES_WORKFLOW_V166_INTEGRATION_PASS'
 
       - name: Reconstruct v1.65 public build
         shell: bash
