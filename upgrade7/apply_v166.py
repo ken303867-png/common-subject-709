@@ -50,6 +50,9 @@ def main():
     if actual_ids != expected_ids:
         die("ID sequence mismatch before v1.66 patch")
 
+    # The entire pre-patch dataset is cryptographically pinned. This is the
+    # authoritative precondition; descriptive per-field 'before' text is not
+    # used as a second source of truth.
     before_digest = canonical_digest(questions)
     if before_digest != patch["baseCanonicalSha256"]:
         die(
@@ -64,14 +67,17 @@ def main():
     }
 
     changed_fields = []
+    descriptive_before_mismatches = []
     for change in patch["changes"]:
         qid = change["id"]
         field = change["field"]
         if qid not in by_id:
             die("patch target missing: " + qid)
+        if field not in ("optionExplanations", "explanation"):
+            die(f"unexpected mutable field: {qid}.{field}")
         q = by_id[qid]
-        if q.get(field) != change["before"]:
-            die(f"unexpected pre-patch value: {qid}.{field}")
+        if "before" in change and q.get(field) != change["before"]:
+            descriptive_before_mismatches.append(f"{qid}.{field}")
         q[field] = change["after"]
         changed_fields.append((qid, field))
 
@@ -91,6 +97,7 @@ def main():
             if q.get(field) != before_core[q["id"]][field]:
                 die(f"immutable core field changed: {q['id']}.{field}")
 
+    # The final full-dataset digest must equal the QA-approved v1.66 candidate.
     after_digest = canonical_digest(questions)
     if after_digest != patch["targetCanonicalSha256"]:
         die(
@@ -104,6 +111,7 @@ def main():
     for i, p in enumerate(parts):
         p.write_bytes(encoded[cuts[i]:cuts[i + 1]])
 
+    # Re-decode the actual persisted build bytes and hash again.
     persisted = b"".join(p.read_bytes() for p in parts)
     root2, _ = mod.decode_data(persisted)
     questions2 = mod.locate_questions(root2)
@@ -125,6 +133,7 @@ def main():
             "answer_changes=0",
             "question_changes=0",
             "choice_changes=0",
+            f"descriptive_before_mismatches={len(descriptive_before_mismatches)}",
             "",
         ]),
         encoding="utf-8",
@@ -137,6 +146,11 @@ def main():
             s = s.replace("v1.65", "v1.66")
             p.write_text(s, encoding="utf-8")
 
+    if descriptive_before_mismatches:
+        print(
+            "INFO: descriptive before-value mismatches ignored because the "
+            f"full base digest matched exactly: {len(descriptive_before_mismatches)}"
+        )
     print(
         "OK: applied v1.66 patch; "
         f"changes=20; answer_changes=0; sha256={after_digest}"
