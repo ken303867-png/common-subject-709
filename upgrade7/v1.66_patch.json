@@ -1,0 +1,130 @@
+{
+  "schema": "common-subject-712-v166-delta-v1",
+  "baseVersion": "v1.65_FINAL_712",
+  "targetVersion": "v1.66_FINAL_712",
+  "questionCount": 712,
+  "baseCanonicalSha256": "5780873d530a62287fb19d5e610666509861844543804621d471649f9156fb3f",
+  "targetCanonicalSha256": "c47fb62f5fe7c398099b237539bbafdfaea2ca035600e5f6760bcf8b9cd8cc73",
+  "changes": [
+    {
+      "id": "LEARN-COM-317",
+      "field": "explanation",
+      "before": "DKAでは、浸透圧利尿による多尿・多飲、悪心・嘔吐・腹痛などの消化器症状、Kussmaul呼吸（速く深く規則正しい呼吸）を認める。乏尿は誤答である。DKA・Kussmaul呼吸/多尿を問う問題では、この選択肢の違いを見抜けるようにしておきたい。",
+      "after": "DKAについて、みられない所見はC「乏尿」である。DKAでは高血糖による浸透圧利尿のため多尿・多飲を認め、腹痛などの消化器症状や速く深く規則正しいKussmaul呼吸を呈しうる。したがって乏尿は典型所見ではなく、本問ではCが正答となる。C「乏尿」とA「腹痛」の違いを押さえると、DKA・Kussmaul呼吸/多尿の判定が明確になる。"
+    },
+    {
+      "id": "LEARN-COM-631",
+      "field": "optionExplanations",
+      "before": "B：正しい。反証所見と代替仮説を検討する。\nA〜D：誤り。いずれもアンカリング・確認バイアスを強化する。",
+      "after": "B：正しい。反証所見と代替仮説を検討する。\nA・C・D：誤り。いずれもアンカリング・確認バイアスを強化する。"
+    },
+    {
+      "id": "LEARN-COM-637",
+      "field": "optionExplanations",
+      "before": "C：正しい。指示内容を具体的に復唱し相互確認している。\nA〜D：誤り。いずれもループが閉じておらず誤伝達リスクが高い。",
+      "after": "C：正しい。指示内容を具体的に復唱し相互確認している。\nA・B・D：誤り。いずれもループが閉じておらず誤伝達リスクが高い。"
+    },
+    {
+      "id": "LEARN-COM-639",
+      "field": "optionExplanations",
+      "before": "A〜D：正しい。\nB：誤り。安全上の懸念は権威勾配を越えて伝達できる文化が必要。",
+      "after": "A・C・D：正しい。\nB：誤り。安全上の懸念は権威勾配を越えて伝達できる文化が必要。"
+    },
+    {
+      "id": "LEARN-COM-640",
+      "field": "optionExplanations",
+      "before": "D：正しい。\nB〜A：誤り。安全上の重要情報を共有し、過負荷に対し支援する必要がある。",
+      "after": "D：正しい。\nA・B・C：誤り。安全上の重要情報を共有し、過負荷に対し支援する必要がある。"
+    },
+    {
+      "id": "LEARN-COM-648",
+      "field": "optionExplanations",
+      "before": "A〜C：正しい。\nB：誤り。急変時は手技完遂より患者安全を優先する。",
+      "after": "A・C・D：正しい。\nB：誤り。急変時は手技完遂より患者安全を優先する。"
+    },
+    {
+      "id": "LEARN-COM-651",
+      "field": "optionExplanations",
+      "before": "A〜C：正しい。\nB：誤り。能力限界を認識し相談することは患者安全と専門職責任の一部。",
+      "after": "A・C・D：正しい。\nB：誤り。能力限界を認識し相談することは患者安全と専門職責任の一部。"
+    },
+    {
+      "id": "LEARN-COM-659",
+      "field": "optionExplanations",
+      "before": "D：正しい。\nB〜A：誤り。相談者のニーズと問題特性を起点にモデルを選ぶ。",
+      "after": "D：正しい。\nA・B・C：誤り。相談者のニーズと問題特性を起点にモデルを選ぶ。"
+    },
+    {
+      "id": "LEARN-COM-660",
+      "field": "optionExplanations",
+      "before": "A〜D：正しい。\nC：誤り。状況変化に応じ柔軟に資源を再配置する。",
+      "after": "A・B・D：正しい。\nC：誤り。状況変化に応じ柔軟に資源を再配置する。"
+    },
+    {
+      "id": "LEARN-COM-661",
+      "field": "optionExplanations",
+      "before": "C：正しい。\nA〜D：誤り。懲罰・沈黙・個人責任への偏重は安全文化を弱める。",
+      "after": "C：正しい。\nA・B・D：誤り。懲罰・沈黙・個人責任への偏重は安全文化を弱める。"
+    },
+    {
+      "id": "LEARN-COM-666",
+      "field": "optionExplanations",
+      "before": "B〜D：正しい。\nA：誤り。Na値だけでは原因を分類できない。",
+      "after": "B・C・D：正しい。\nA：誤り。Na値だけでは原因を分類できない。"
+    },
+    {
+      "id": "LEARN-COM-669",
+      "field": "optionExplanations",
+      "before": "B〜D：正しい。\nA：誤り。自然免疫は初回曝露から働く。",
+      "after": "B・C・D：正しい。\nA：誤り。自然免疫は初回曝露から働く。"
+    },
+    {
+      "id": "LEARN-COM-675",
+      "field": "optionExplanations",
+      "before": "D：正しい。\nB〜A：誤り。主訴の時間経過が不十分である。",
+      "after": "D：正しい。\nA・B・C：誤り。主訴の時間経過が不十分である。"
+    },
+    {
+      "id": "LEARN-COM-677",
+      "field": "optionExplanations",
+      "before": "A〜D：正しい。\nB：誤り。胸水は濁音が典型。",
+      "after": "A・C・D：正しい。\nB：誤り。胸水は濁音が典型。"
+    },
+    {
+      "id": "LEARN-COM-680",
+      "field": "optionExplanations",
+      "before": "A〜D：正しい。\nC：誤り。生活機能・社会環境はCGAの重要領域。",
+      "after": "A・B・D：正しい。\nC：誤り。生活機能・社会環境はCGAの重要領域。"
+    },
+    {
+      "id": "LEARN-COM-683",
+      "field": "optionExplanations",
+      "before": "A〜D：正しい。\nC：誤り。標準量固定ではなく薬剤特性・患者状態に応じて個別化する。",
+      "after": "A・B・D：正しい。\nC：誤り。標準量固定ではなく薬剤特性・患者状態に応じて個別化する。"
+    },
+    {
+      "id": "LEARN-COM-684",
+      "field": "optionExplanations",
+      "before": "A〜D：正しい。\nC：誤り。NMSを疑う所見である。",
+      "after": "A・B・D：正しい。\nC：誤り。NMSを疑う所見である。"
+    },
+    {
+      "id": "LEARN-COM-687",
+      "field": "optionExplanations",
+      "before": "A〜D：正しい。\nB：誤り。GDMTは個別化し副作用を監視する。",
+      "after": "A・C・D：正しい。\nB：誤り。GDMTは個別化し副作用を監視する。"
+    },
+    {
+      "id": "LEARN-COM-690",
+      "field": "optionExplanations",
+      "before": "A〜D：正しい。\nC：誤り。水腎症では閉塞を積極的に評価する。",
+      "after": "A・B・D：正しい。\nC：誤り。水腎症では閉塞を積極的に評価する。"
+    },
+    {
+      "id": "LEARN-COM-696",
+      "field": "optionExplanations",
+      "before": "A〜D：正しい。\nC：誤り。患者中心の個別化が必要。",
+      "after": "A・B・D：正しい。\nC：誤り。患者中心の個別化が必要。"
+    }
+  ]
+}
